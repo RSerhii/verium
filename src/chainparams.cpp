@@ -17,13 +17,13 @@
 #include <boost/algorithm/string/split.hpp>
 
 
-arith_uint256 proofOfWorkLimit(~arith_uint256(0) >> 11);  // standard scrypt^2 minimum difficulty (0.00000048)
-arith_uint256 proofOfWorkLimitTestNet(~arith_uint256(0) >> 11);
+arith_uint256 proofOfWorkLimit(~arith_uint256(0) >> 5);  // scrypt^2 minimum difficulty
+arith_uint256 proofOfWorkLimitTestNet(~arith_uint256(0) >> 5);
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
     CMutableTransaction txNew;
-    txNew.nTime = 1472669240; /// Verium magic constant.
+    txNew.nTime = 1600186571; /// Verium magic constant.
     txNew.nVersion = 1;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
@@ -48,11 +48,26 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
  */
 static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    const char* pszTimestamp = "VeriCoin block 1340292";
+    const char* pszTimestamp = "The Genesis Block";
     const CScript genesisOutputScript = CScript();
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
+#include "bignum.h"
+bool CheckProofOfWork2(uint256 hash, unsigned int nBits)
+{
+    CBigNum bnTarget;
+    bnTarget.SetCompact(nBits);
 
+    // Check range
+    if (bnTarget <= 0 || bnTarget > CBigNum(ArithToUint256(proofOfWorkLimit)))
+        return false;
+
+    // Check proof of work matches claimed amount
+    if (UintToArith256(hash) > UintToArith256(bnTarget.getuint256()))
+        return false;
+
+    return true;
+}
 /**
  * Main network
  */
@@ -82,16 +97,17 @@ public:
         pchMessageStart[0] = 0x70;
         pchMessageStart[1] = 0x35;
         pchMessageStart[2] = 0x22;
-        pchMessageStart[3] = 0x05;
+        pchMessageStart[3] = 0x06;
         nDefaultPort = 36988;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 4;
 
-        genesis = CreateGenesisBlock(1472669240, 233180, proofOfWorkLimit.GetCompact(), 1, 2500 * COIN);
+        genesis = CreateGenesisBlock(1600186571, 24, proofOfWorkLimit.GetCompact(), 1, 2500 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x8232c0cf3bd7e05546e3d7aaaaf89fed8bc97c4df1a8c95e9249e13a2734932b"));
-        assert(genesis.hashMerkleRoot == uint256S("0x925e430072a1f39b530fc79db162e29433ab0ea266a99c8cab4f03001dc9faa9"));
+        
+        assert(consensus.hashGenesisBlock == uint256S("0xf0f0410d17a6adabc24686bfa3a5985fea97725414be348fd83fd44785983fd5"));
+        assert(genesis.hashMerkleRoot == uint256S("0xf925fa938598b77f0e8d96126e13139c391074a0d780f28f353a2db33157a71d"));
 
         // Note that of those which support the service bits prefix, most only support a subset of
         // possible options.
